@@ -34,3 +34,4 @@ python multitask_simulator_training.py --input_size 20 \
 	--epoch 100 \
 	--training_data_path simulator_training_batch.pkl \
 	--which_model 'GRU'
+	
