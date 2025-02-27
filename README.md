@@ -10,4 +10,3 @@ conda create -n loan python=3.11
 conda activate loan
 pip install -r requirements.txt
 ```
-
