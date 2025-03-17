@@ -76,6 +76,7 @@ class LoanSimDataset(Dataset):
         sequences = []
         for loan_id, group in self.grouped_data:
             print(loan_id)
+            loan_id: str = loan_id
             features = group[self.features_columns].values
             targets = group[self.target_columns].values
             sequences.append((features, targets))
