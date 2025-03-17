@@ -72,9 +72,10 @@ class LoanSimDataset(Dataset):
         self.sequences = self.create_sequences()
 
     def create_sequences(self):
+        print("------------ Creating Sequences ------------")
         sequences = []
-        for _, group in self.grouped_data:
-            # print(loan_id)
+        for loan_id, group in self.grouped_data:
+            print(loan_id)
             features = group[self.features_columns].values
             targets = group[self.target_columns].values
             sequences.append((features, targets))
