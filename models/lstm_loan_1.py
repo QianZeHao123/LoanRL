@@ -17,7 +17,7 @@ class LSTMModel(nn.Module):
         self.mlp = nn.Sequential(
             nn.Linear(hidden_size, output_size),
             # nn.ReLU(),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x, lengths):  # Accepts raw input and lengths
