@@ -1,2 +1,4 @@
 # Do not upload pth file
 *.pth
+# Do not upload png file
+*.png
