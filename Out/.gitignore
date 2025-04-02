@@ -1,4 +1,5 @@
-# Do not upload pth file
+*.csv
+*.xlsx
+*.pt
 *.pth
-# Do not upload png file
 *.png
