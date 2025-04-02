@@ -8,9 +8,8 @@ import numpy as np
 from torch import optim
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import confusion_matrix
 from rich.console import Console
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from sklearn.metrics import (
     f1_score,
     accuracy_score,
@@ -20,6 +19,7 @@ from sklearn.metrics import (
 )
 from models.variable_list import scale_columns, features, full_targets
 import itertools
+
 
 console = Console()
 
@@ -59,10 +59,6 @@ train_dataloader = DataLoader(
 val_dataloader = DataLoader(
     val_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn
 )
-
-
-import torch.nn as nn
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class MultiTaskModel(nn.Module):
@@ -524,6 +520,11 @@ def single_parameters_set_training(
                 counter = 0
                 if save_model:
                     torch.save(model.state_dict(), model_save_path)
+                    # save the torchscript model
+                    torchscript_model = torch.jit.script(model)
+                    torchscript_model.save(
+                        model_save_folder + f"/{model_name}_torchscript.pt"
+                    )
                 print("This training checkpoint has been saved!")
 
                 best_train_state_mse = traing_state_loss
@@ -726,25 +727,147 @@ def single_parameters_set_training(
         "Total Time": total_time,
     }
 
+
 # -----------------------------------------------------------------
 
+
+# -----------------------------------------------------------------
 # Define the parameters for the training
+
+# rnn_models = ["LSTM", "RNN", "GRU"]
+# rnn_output_sizes = [32, 64]
+# num_layers_list = [1, 2, 3]
+
+# # generate all the combinations of the parameters
+# param_combinations = list(
+#     itertools.product(rnn_models, rnn_output_sizes, num_layers_list)
+# )
+
+# # enumerate all the combinations
+# for idx, (rnn_model, rnn_output_size, num_layers) in enumerate(
+#     param_combinations, start=1
+# ):
+#     model_dir = f"Model_{idx}"
+#     # generate the model name
+#     model_name = f"{rnn_model}_out{rnn_output_size}_layers{num_layers}"
+#     print(f"Training {model_name} and saving to {model_dir}")
+
+#     result = single_parameters_set_training(
+#         model_name=model_dir,
+#         rnn_model=rnn_model,
+#         input_size=len(features),
+#         rnn_output_size=rnn_output_size,
+#         num_layers=num_layers,
+#         state_pred_hidden_layers=[],
+#         installment_pred_hidden_layers=[],
+#         loan_pred_hidden_layers=[],
+#         recovery_rate_pred_hidden_layers=[],
+#         learning_rate=0.0005,
+#         num_epochs=100,
+#         save_model=True,
+#     )
+#     result_df = pd.DataFrame([result])
+#     result_df.to_excel(f"./Out/{model_dir}/result.xlsx", index=False)
+#     print(f"Model {model_name} training complete. Saved in {model_dir}\n")
+
+
+# -----------------------------------------------------------------
+# add new parameters for the training
+# state_pred_hidden_layers_lst = [[], [32], [32, 16]]
+# installment_pred_hidden_layers_lst = [[], [32], [32, 16]]
+# loan_pred_hidden_layers_lst = [[], [32], [32, 16]]
+# recovery_rate_pred_hidden_layers_lst = [[], [32], [32, 16]]
+
+# rnn_model = "GRU"
+# rnn_output_size = 64
+# num_layers = 3
+
+# # generate all the combinations of the parameters
+# param_combinations = list(
+#     itertools.product(
+#         state_pred_hidden_layers_lst,
+#         installment_pred_hidden_layers_lst,
+#         loan_pred_hidden_layers_lst,
+#         recovery_rate_pred_hidden_layers_lst,
+#     )
+# )
+
+# # Enumerate all the combinations
+# for idx, (
+#     state_pred_hidden_layers,
+#     installment_pred_hidden_layers,
+#     loan_pred_hidden_layers,
+#     recovery_rate_pred_hidden_layers,
+# ) in enumerate(param_combinations, start=1):
+
+#     model_dir = f"Model_{idx}"
+#     model_name = (
+#         # f"{rnn_model}_out{rnn_output_size}_layers{num_layers}_"
+#         # f"state{state_pred_hidden_layers}_inst{installment_pred_hidden_layers}_"
+#         # f"loan{loan_pred_hidden_layers}_recov{recovery_rate_pred_hidden_layers}"
+#         f"{rnn_model}_out{rnn_output_size}_layers{num_layers}"
+#     )
+
+#     print(f"Training {model_name} and saving to {model_dir}")
+
+#     result = single_parameters_set_training(
+#         model_name=model_dir,
+#         rnn_model=rnn_model,
+#         input_size=len(features),
+#         rnn_output_size=rnn_output_size,
+#         num_layers=num_layers,
+#         state_pred_hidden_layers=state_pred_hidden_layers,
+#         installment_pred_hidden_layers=installment_pred_hidden_layers,
+#         loan_pred_hidden_layers=loan_pred_hidden_layers,
+#         recovery_rate_pred_hidden_layers=recovery_rate_pred_hidden_layers,
+#         learning_rate=0.0005,
+#         num_epochs=100,
+#         save_model=True,
+#     )
+
+#     result_df = pd.DataFrame([result])
+#     result_df.to_excel(f"./Out/{model_dir}/result.xlsx", index=False)
+#     print(f"Model {model_name} training complete. Saved in {model_dir}\n")
+
+# -----------------------------------------------------------------
+# Try all the combinations of the parameters
+
 rnn_models = ["LSTM", "RNN", "GRU"]
 rnn_output_sizes = [32, 64]
 num_layers_list = [1, 2, 3]
-
+state_pred_hidden_layers_lst = [[], [32], [32, 16]]
+installment_pred_hidden_layers_lst = [[], [32], [32, 16]]
+loan_pred_hidden_layers_lst = [[], [32], [32, 16]]
+recovery_rate_pred_hidden_layers_lst = [[], [32], [32, 16]]
 # generate all the combinations of the parameters
 param_combinations = list(
-    itertools.product(rnn_models, rnn_output_sizes, num_layers_list)
+    itertools.product(
+        rnn_models,
+        rnn_output_sizes,
+        num_layers_list,
+        state_pred_hidden_layers_lst,
+        installment_pred_hidden_layers_lst,
+        loan_pred_hidden_layers_lst,
+        recovery_rate_pred_hidden_layers_lst,
+    )
 )
-
-# enumerate all the combinations
-for idx, (rnn_model, rnn_output_size, num_layers) in enumerate(
-    param_combinations, start=1
-):
+# Enumerate all the combinations
+for idx, (
+    rnn_model,
+    rnn_output_size,
+    num_layers,
+    state_pred_hidden_layers,
+    installment_pred_hidden_layers,
+    loan_pred_hidden_layers,
+    recovery_rate_pred_hidden_layers,
+) in enumerate(param_combinations, start=1):
     model_dir = f"Model_{idx}"
-    # generate the model name
-    model_name = f"{rnn_model}_out{rnn_output_size}_layers{num_layers}"
+    model_name = (
+        f"{rnn_model}_out{rnn_output_size}_layers{num_layers}"
+        # f"state{state_pred_hidden_layers}_inst{installment_pred_hidden_layers}_"
+        # f"loan{loan_pred_hidden_layers}_recov{recovery_rate_pred_hidden_layers}"
+    )
+
     print(f"Training {model_name} and saving to {model_dir}")
 
     result = single_parameters_set_training(
@@ -753,14 +876,15 @@ for idx, (rnn_model, rnn_output_size, num_layers) in enumerate(
         input_size=len(features),
         rnn_output_size=rnn_output_size,
         num_layers=num_layers,
-        state_pred_hidden_layers=[],
-        installment_pred_hidden_layers=[],
-        loan_pred_hidden_layers=[],
-        recovery_rate_pred_hidden_layers=[],
+        state_pred_hidden_layers=state_pred_hidden_layers,
+        installment_pred_hidden_layers=installment_pred_hidden_layers,
+        loan_pred_hidden_layers=loan_pred_hidden_layers,
+        recovery_rate_pred_hidden_layers=recovery_rate_pred_hidden_layers,
         learning_rate=0.0005,
         num_epochs=100,
         save_model=True,
     )
+
     result_df = pd.DataFrame([result])
     result_df.to_excel(f"./Out/{model_dir}/result.xlsx", index=False)
     print(f"Model {model_name} training complete. Saved in {model_dir}\n")
