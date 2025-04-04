@@ -1,0 +1,4 @@
+# do not upload any log files
+# log files
+*.out
+*.log
